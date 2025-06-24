@@ -30,13 +30,6 @@ RUN curl -sS https://raw.githubusercontent.com/docker/cli/refs/heads/master/cont
 WORKDIR /root
 
 
-RUN echo "root:root" | chpasswd &> /dev/null && \
-sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config && \
-sed -i 's/^PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config && \
-sed -i 's/^#PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
-sed -i 's/^PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
-mkdir -p /run/sshd && chmod 0755 /run/sshd
-
 # Install the magic wrapper.
 ADD ./wrapdocker /usr/local/bin/wrapdocker
 RUN chmod +x /usr/local/bin/wrapdocker
