@@ -1,4 +1,4 @@
-FROM ubuntu:14.04
+FROM ubuntu
 MAINTAINER jerome.petazzoni@docker.com
 
 # Let's start with some basic stuff.
@@ -7,10 +7,33 @@ RUN apt-get update -qq && apt-get install -qqy \
     ca-certificates \
     curl \
     lxc \
-    iptables
+    iptables \
+    git \
+    python3-dev \
+    tmux \
+    vim \
+    bash-completion \
+    openssh-server \
+    tree
     
 # Install Docker from Docker Inc. repositories.
 RUN curl -sSL https://get.docker.com/ | sh
+
+RUN mkdir -p /usr/lib/docker/cli-plugins \
+    && curl -LsS https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/lib/docker/cli-plugins/docker-compose \
+    && chmod +x /usr/lib/docker/cli-plugins/docker-compose
+
+# Add bash completion and set bash as default shell
+RUN curl -sS https://raw.githubusercontent.com/docker/cli/refs/heads/master/contrib/completion/bash/docker -o /etc/bash_completion.d/docker
+
+
+WORKDIR /root
+
+
+RUN echo "root:root" | chpasswd &> /dev/null && \
+sudo sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+sudo sed -i 's/^PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+service ssh start
 
 # Install the magic wrapper.
 ADD ./wrapdocker /usr/local/bin/wrapdocker
