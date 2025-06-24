@@ -97,7 +97,7 @@ else
 	then
 		dockerd $DOCKER_DAEMON_ARGS &>/var/log/docker.log &
 	else
-		dockerd $DOCKER_DAEMON_ARGS >/dev/null 2>&1 &
+		dockerd $DOCKER_DAEMON_ARGS &>/dev/null 2>&1 &
 	fi
 	(( timeout = 60 + SECONDS ))
 	until docker info >/dev/null 2>&1
