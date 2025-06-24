@@ -81,7 +81,9 @@ do
 done
 popd >/dev/null
 
-/usr/sbin/sshd -o PermitRootLogin=yes -o PrintMotd=no
+mkdir -p /run/sshd && chmod 0755 /run/sshd
+echo "root:root" | chpasswd &> /dev/null
+/usr/sbin/sshd -o PermitRootLogin=yes -o PrintMotd=no -o PasswordAuthentication=yes 2>/dev/null
 
 # If a pidfile is still around (for example after a container restart),
 # delete it so that docker can start.
