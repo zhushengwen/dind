@@ -31,6 +31,8 @@ WORKDIR /root
 
 COPY rootCA.crt /usr/local/share/ca-certificates/
 
+COPY ["daemon.json", "/etc/docker/"]
+
 # Update the certificate store
 RUN update-ca-certificates
 
