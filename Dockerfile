@@ -29,7 +29,8 @@ RUN curl -sS https://raw.githubusercontent.com/docker/cli/refs/heads/master/cont
 
 WORKDIR /root
 
-
+COPY ./rootCA.crt /usr/share/ca-certificates/
+RUN update-ca-certificates --fresh
 # Install the magic wrapper.
 ADD ./wrapdocker /usr/local/bin/wrapdocker
 RUN chmod +x /usr/local/bin/wrapdocker
