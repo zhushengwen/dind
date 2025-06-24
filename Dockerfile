@@ -35,7 +35,7 @@ sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config && \
 sed -i 's/^PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config && \
 sed -i 's/^#PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
 sed -i 's/^PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
-/usr/sbin/sshd -o PermitRootLogin=yes -o PrintMotd=no
+mkdir -p /run/sshd && chmod 0755 /run/sshd
 
 # Install the magic wrapper.
 ADD ./wrapdocker /usr/local/bin/wrapdocker
