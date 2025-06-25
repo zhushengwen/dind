@@ -21,8 +21,8 @@ RUN apt-get update -qq && apt-get install -qqy \
 RUN curl -sSL https://get.docker.com/ | sh
 
 RUN mkdir -p /usr/lib/docker/cli-plugins \
-    && curl -LsS https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/lib/docker/cli-plugins/docker-compose \
-    && chmod +x /usr/lib/docker/cli-plugins/docker-compose
+    && curl -LsS https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/bin/docker-compose \
+    && chmod +x /usr/bin/docker-compose
 
 # Add bash completion and set bash as default shell
 RUN curl -sS https://raw.githubusercontent.com/docker/cli/refs/heads/master/contrib/completion/bash/docker -o /etc/bash_completion.d/docker
