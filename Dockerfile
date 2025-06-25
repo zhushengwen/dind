@@ -14,7 +14,8 @@ RUN apt-get update -qq && apt-get install -qqy \
     vim \
     bash-completion \
     openssh-server \
-    tree
+    tree \
+    sudo
     
 # Install Docker from Docker Inc. repositories.
 RUN curl -sSL https://get.docker.com/ | sh
