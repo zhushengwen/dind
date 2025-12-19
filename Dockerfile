@@ -1,7 +1,6 @@
 FROM ubuntu
 MAINTAINER support@skillup.host
 
-ARG MY_ARG=root
 
 # Let's start with some basic stuff.
 RUN apt-get update -qq && apt-get install -qqy \
@@ -23,17 +22,20 @@ RUN apt-get update -qq && apt-get install -qqy \
 RUN curl -sSL https://get.docker.com/ | sh
 
 # Add bash completion and set bash as default shell
-RUN mkdir -p /usr/lib/docker/cli-plugins \
+RUN --mount=type=secret,id=my_secret_var \
+    my_secret=$(cat /run/secrets/my_secret_var) \
+    && mkdir -p /usr/lib/docker/cli-plugins \
     && curl -LsS https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/bin/docker-compose \
     && chmod +x /usr/bin/docker-compose \
     && curl -sS https://raw.githubusercontent.com/docker/cli/refs/heads/master/contrib/completion/bash/docker -o /etc/bash_completion.d/docker \
-    && echo "root:$MY_ARG" | chpasswd \
+    && echo "root:$my_secret" | chpasswd \
     && ln -s /usr/bin/python3 /usr/bin/python
 COPY sshd_config /etc/ssh/sshd_config
 
 #for rust
-# curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-# . "$HOME/.cargo/env"
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
 WORKDIR /root
 
 COPY rootCA.crt /usr/local/share/ca-certificates/

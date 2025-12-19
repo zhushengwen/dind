@@ -1,0 +1,1 @@
+docker build --secret id=my_secret_var,src=arg.txt   -t dind .
