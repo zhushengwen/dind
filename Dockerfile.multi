@@ -1,6 +1,9 @@
 FROM ubuntu
 MAINTAINER support@skillup.host
 
+# Build argument to specify which language to install
+ARG LANG_TYPE=base
+
 # Switch to Alibaba Cloud Ubuntu mirror
 RUN sed -i 's/archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list && \
     sed -i 's/security.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list
@@ -35,9 +38,42 @@ RUN --mount=type=secret,id=my_secret_var \
     && ln -s /usr/bin/python3 /usr/bin/python
 COPY sshd_config /etc/ssh/sshd_config
 
-#for rust
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+# Install Rust if LANG_TYPE is rust
+RUN if [ "$LANG_TYPE" = "rust" ]; then \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; \
+    fi
 ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Install Python tools if LANG_TYPE is python
+RUN if [ "$LANG_TYPE" = "python" ]; then \
+    apt-get update -qq && apt-get install -qqy python3-pip && \
+    pip3 install --upgrade pip setuptools wheel && \
+    pip3 install numpy matplotlib pandas scipy scikit-learn jupyter ipython; \
+    fi
+
+# Install Node.js if LANG_TYPE is node
+RUN if [ "$LANG_TYPE" = "node" ]; then \
+    curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - && \
+    apt-get install -qqy nodejs && \
+    npm install -g @anthropic-ai/claude-code; \
+    fi
+
+# Install Golang if LANG_TYPE is golang
+RUN if [ "$LANG_TYPE" = "golang" ]; then \
+    apt-get update -qq && apt-get install -qqy wget && \
+    wget https://go.dev/dl/go1.21.0.linux-amd64.tar.gz && \
+    rm -rf /usr/local/go && \
+    tar -C /usr/local -xzf go1.21.0.linux-amd64.tar.gz && \
+    rm go1.21.0.linux-amd64.tar.gz; \
+    fi
+ENV PATH="/usr/local/go/bin:${PATH}"
+
+# Install Java if LANG_TYPE is java
+RUN if [ "$LANG_TYPE" = "java" ]; then \
+    apt-get update -qq && apt-get install -qqy openjdk-11-jdk maven; \
+    fi
+ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 WORKDIR /root
 
@@ -55,4 +91,3 @@ RUN chmod +x /usr/local/bin/wrapdocker
 # Define additional metadata for our image.
 VOLUME /var/lib/docker
 CMD ["wrapdocker"]
-

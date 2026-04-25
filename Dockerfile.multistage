@@ -1,0 +1,124 @@
+# 多阶段构建 - 优化镜像大小
+# 特别优化 Rust 和 Go 的编译工具大小
+
+ARG LANG_TYPE=base
+
+# ============================================================
+# Stage 1: Builder - 用于构建工具和编译
+# ============================================================
+FROM ubuntu as builder
+
+ARG LANG_TYPE
+
+# Switch to Alibaba Cloud Ubuntu mirror
+RUN sed -i 's/archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list && \
+    sed -i 's/security.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list
+
+# Install base build tools
+RUN apt-get update -qq && apt-get install -qqy \
+    curl \
+    wget \
+    build-essential
+
+# Build Rust (only compile in builder stage)
+RUN if [ "$LANG_TYPE" = "rust" ]; then \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+    /root/.cargo/bin/cargo install cargo-watch cargo-edit cargo-outdated; \
+    fi
+
+# ============================================================
+# Stage 2: Runtime - 最终镜像
+# ============================================================
+FROM ubuntu
+
+MAINTAINER support@skillup.host
+
+ARG LANG_TYPE
+
+# Switch to Alibaba Cloud Ubuntu mirror
+RUN sed -i 's/archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list && \
+    sed -i 's/security.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list
+
+# Let's start with some basic stuff.
+RUN apt-get update -qq && apt-get install -qqy \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    lxc \
+    iptables \
+    git \
+    python3-dev \
+    tmux \
+    vim \
+    bash-completion \
+    openssh-server \
+    tree \
+    sudo
+    
+# Install Docker from Docker Inc. repositories.
+RUN curl -sSL https://get.docker.com/ | sh
+
+# Add bash completion and set bash as default shell
+RUN mkdir -p /usr/lib/docker/cli-plugins \
+    && curl -LsS https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/bin/docker-compose \
+    && chmod +x /usr/bin/docker-compose \
+    && curl -sS https://raw.githubusercontent.com/docker/cli/refs/heads/master/contrib/completion/bash/docker -o /etc/bash_completion.d/docker \
+    && echo "root:root" | chpasswd \
+    && ln -s /usr/bin/python3 /usr/bin/python
+COPY sshd_config /etc/ssh/sshd_config
+
+# Install Rust if LANG_TYPE is rust
+# Copy compiled Rust from builder stage
+RUN if [ "$LANG_TYPE" = "rust" ]; then \
+    apt-get update -qq && apt-get install -qqy build-essential; \
+    fi
+COPY --from=builder /root/.cargo /root/.cargo
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Install Python tools if LANG_TYPE is python
+RUN if [ "$LANG_TYPE" = "python" ]; then \
+    apt-get update -qq && apt-get install -qqy python3-pip && \
+    pip3 install --upgrade pip setuptools wheel && \
+    pip3 install numpy matplotlib pandas scipy scikit-learn jupyter ipython; \
+    fi
+
+# Install Node.js if LANG_TYPE is node
+RUN if [ "$LANG_TYPE" = "node" ]; then \
+    curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - && \
+    apt-get install -qqy nodejs && \
+    npm install -g @anthropic-ai/claude-code; \
+    fi
+
+# Install Golang if LANG_TYPE is golang
+RUN if [ "$LANG_TYPE" = "golang" ]; then \
+    apt-get update -qq && apt-get install -qqy wget && \
+    wget https://go.dev/dl/go1.21.0.linux-amd64.tar.gz && \
+    rm -rf /usr/local/go && \
+    tar -C /usr/local -xzf go1.21.0.linux-amd64.tar.gz && \
+    rm go1.21.0.linux-amd64.tar.gz; \
+    fi
+ENV PATH="/usr/local/go/bin:${PATH}"
+
+# Install Java if LANG_TYPE is java
+RUN if [ "$LANG_TYPE" = "java" ]; then \
+    apt-get update -qq && apt-get install -qqy openjdk-11-jdk maven; \
+    fi
+ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
+
+WORKDIR /root
+
+COPY rootCA.crt /usr/local/share/ca-certificates/
+
+COPY ["daemon.json", "/etc/docker/"]
+
+# Update the certificate store
+RUN update-ca-certificates
+
+# Install the magic wrapper.
+ADD ./wrapdocker /usr/local/bin/wrapdocker
+RUN chmod +x /usr/local/bin/wrapdocker
+
+# Define additional metadata for our image.
+VOLUME /var/lib/docker
+CMD ["wrapdocker"]
