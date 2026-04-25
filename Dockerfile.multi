@@ -47,8 +47,8 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 # Install Python tools if LANG_TYPE is python
 RUN if [ "$LANG_TYPE" = "python" ]; then \
     apt-get update -qq && apt-get install -qqy python3-pip && \
-    pip3 install --upgrade pip setuptools wheel && \
-    pip3 install numpy matplotlib pandas scipy scikit-learn jupyter ipython; \
+    pip3 install --no-cache-dir --timeout=3000 --upgrade pip setuptools wheel && \
+    pip3 install --no-cache-dir --timeout=3000 -i https://pypi.tuna.tsinghua.edu.cn/simple numpy matplotlib pandas scipy scikit-learn jupyter ipython; \
     fi
 
 # Install Node.js if LANG_TYPE is node
