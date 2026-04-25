@@ -53,9 +53,19 @@ RUN if [ "$LANG_TYPE" = "python" ]; then \
 
 # Install Node.js if LANG_TYPE is node
 RUN if [ "$LANG_TYPE" = "node" ]; then \
-    curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - && \
-    apt-get install -qqy nodejs && \
-    npm install -g @anthropic-ai/claude-code; \
+    curl -fsSL https://nodejs.org/dist/v20.18.0/node-v20.18.0-linux-x64.tar.gz -o /tmp/node.tar.gz && \
+    tar -C /usr/local --strip-components=1 -xzf /tmp/node.tar.gz && \
+    rm /tmp/node.tar.gz && \
+    npm install -g @anthropic-ai/claude-code && \
+    npm install -g @musistudio/claude-code-router && \
+    mkdir -p /root/.claude-code-router && \
+    echo '{"LOG":true,"HOST":"127.0.0.1","PORT":3456,"API_TIMEOUT_MS":"600000","Providers":[{"name":"modelscope","api_base_url":"https://api-inference.modelscope.cn/v1/chat/completions","api_key":"ms-21c35c63-178e-48fc-8834-f6beca394b6a","models":["Qwen/Qwen3-Coder-480B-A35B-Instruct","Qwen/Qwen3-235B-A22B-Thinking-2507"],"transformer":{"use":[["maxtoken",{"max_tokens":65536}]],"Qwen/Qwen3-Coder-480B-A35B-Instruct":{"use":["enhancetool"]}}}],"Router":{"default":"modelscope,Qwen/Qwen3-Coder-480B-A35B-Instruct","background":"modelscope,Qwen/Qwen3-Coder-480B-A35B-Instruct","think":"modelscope,Qwen/Qwen3-235B-A22B-Thinking-2507","longContext":"modelscope,Qwen/Qwen3-Coder-480B-A35B-Instruct","longContextThreshold":60000,"webSearch":"modelscope,Qwen/Qwen3-Coder-480B-A35B-Instruct"}}' > /root/.claude-code-router/config.json && \
+    echo 'export ANTHROPIC_BASE_URL="http://127.0.0.1:3456"' >> /root/.bashrc && \
+    echo 'export ANTHROPIC_AUTH_TOKEN="ms-21c35c63-178e-48fc-8834-f6beca394b6a"' >> /root/.bashrc && \
+    echo '#!/bin/bash\nexec /usr/local/bin/ccr code "$@"' > /usr/local/bin/claude_wrapper && \
+    chmod +x /usr/local/bin/claude_wrapper && \
+    mv /usr/local/bin/claude /usr/local/bin/claude_orig && \
+    mv /usr/local/bin/claude_wrapper /usr/local/bin/claude; \
     fi
 
 # Install Golang if LANG_TYPE is golang

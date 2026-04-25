@@ -1,1 +1,13 @@
 *~
+# Sensitive files
+auth.sh
+auth.sh.example
+arg.txt
+secrets/
+*.log
+# IDE and sync tools
+.peersync/
+.idea/
+.vscode/
+# Claude Code
+.omc/

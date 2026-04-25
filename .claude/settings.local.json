@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker *)",
+      "Bash(chmod +x *)",
+      "Bash(./build-all.sh *)"
+    ]
+  }
+}
