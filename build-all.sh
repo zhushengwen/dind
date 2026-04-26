@@ -58,6 +58,21 @@ if [ $failed -eq 0 ]; then
     echo ""
     echo "Built images:"
     docker images | grep dind
+
+    # Push all images to registry
+    echo ""
+    echo -e "${BLUE}Pushing images to registry...${NC}"
+    for lang in "${languages[@]}"; do
+        echo -e "${BLUE}[${lang}] Tagging and pushing...${NC}"
+        docker tag dind:${lang} registry.cn-hangzhou.aliyuncs.com/skillup/dind:${lang}
+        docker push registry.cn-hangzhou.aliyuncs.com/skillup/dind:${lang}
+        if [ $? -eq 0 ]; then
+            echo -e "${GREEN}[${lang}] ✓ Successfully pushed registry.cn-hangzhou.aliyuncs.com/skillup/dind:${lang}${NC}"
+        else
+            echo -e "\033[0;31m[${lang}] ✗ Push failed${NC}"
+            ((failed++))
+        fi
+    done
 else
     echo -e "\033[0;31m${failed} image(s) failed to build${NC}"
     exit 1
