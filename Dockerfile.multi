@@ -100,4 +100,12 @@ RUN chmod +x /usr/local/bin/wrapdocker
 
 # Define additional metadata for our image.
 VOLUME /var/lib/docker
-CMD ["wrapdocker"]
+
+# Create unified entrypoint for all modes
+RUN printf '#!/bin/bash\nif [ "$LANG_TYPE" = "node" ]; then\n  ccr start\nfi\nexec /bin/bash -l\n' > /entrypoint.sh && chmod +x /entrypoint.sh
+
+# Use custom entrypoint
+ENTRYPOINT ["/entrypoint.sh"]
+
+# Default command - will be overridden by CMD in wrapdocker
+CMD ["/bin/bash"]
